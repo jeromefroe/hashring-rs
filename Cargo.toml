@@ -1,0 +1,7 @@
+[package]
+name = "hashring"
+version = "0.1.0"
+authors = ["Jerome Froelich <jerome@froe.io>"]
+
+[dependencies]
+rust-crypto = "0.2.36"

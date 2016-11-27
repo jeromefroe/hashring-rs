@@ -1,7 +1,15 @@
 [package]
 name = "hashring"
 version = "0.1.0"
-authors = ["Jerome Froelich <jerome@froe.io>"]
+homepage = "https://github.com/jeromefroe/hashring-rs"
+repository = "https://github.com/jeromefroe/hashring-rs.git"
+authors = ["Jerome Froelich <jeromefroelich@hotmail.com>"]
+readme = "README.md"
+license = "MIT"
+keywords = ["consistent", "hashing", "hash", "ring"]
+
+[features]
+nightly = []
 
 [dependencies]
 rust-crypto = "0.2.36"

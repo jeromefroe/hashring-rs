@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/jeromefroe/hashring-rs.svg?branch=master)](https://travis-ci.org/jeromefroe/hashring-rs)
 [![Coverage Status](https://coveralls.io/repos/github/jeromefroe/hashring-rs/badge.svg?branch=master)](https://coveralls.io/github/jeromefroe/hashring-rs?branch=master)
+[![crates.io](https://img.shields.io/crates/v/hashring.svg)](https://crates.io/crates/hashring/)
+[![docs.rs](https://docs.rs/hashring/badge.svg)](https://docs.rs/hashring/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/jeromefroe/hashring-rs/master/LICENSE)
 
 [Documentation](https://docs.rs/hashring/)

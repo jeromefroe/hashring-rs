@@ -1,5 +1,9 @@
 # HashRing
 
+[![Build Status](https://travis-ci.org/jeromefroe/hashring-rs.svg?branch=master)](https://travis-ci.org/jeromefroe/hashring-rs)
+[![Coverage Status](https://coveralls.io/repos/github/jeromefroe/hashring-rs/badge.svg?branch=master)](https://coveralls.io/github/jeromefroe/hashring-rs?branch=master)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/jeromefroe/hashring-rs/master/LICENSE)
+
 A minimal implementation of consistent hashing as described in [Consistent
 Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot
 Spots on the World Wide Web] (https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf).

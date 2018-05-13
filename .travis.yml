@@ -1,6 +1,6 @@
-language: rust
 sudo: false
 
+language: rust
 cache: cargo
 env:
   global:
@@ -10,16 +10,16 @@ rust:
   - stable
   - beta
   - nightly
+before_script:
+  - rustup component add rustfmt-preview
+script:
+  - cargo fmt --all -- --write-mode=check
+  - cargo build --verbose --all
+  - cargo test --verbose --all
 matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-  include:
-  - rust: stable
-    install:
-    - rustup component add rustfmt-preview
-    script:
-    - cargo fmt -- --write-mode=check
 
 addons:
   apt:

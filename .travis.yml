@@ -2,14 +2,13 @@ sudo: false
 
 language: rust
 cache: cargo
-env:
-  global:
-  # Prevent dead code elimination to improve code coverage.
-  - RUSTFLAGS="-C link-dead-code"
 matrix:
   fast_finish: true
   include:
-  - env: NAME=stable
+  - env:
+      - NAME="stable"
+      # Link dead code to improve code coverage.
+      - RUSTFLAGS="-C link-dead-code"
     rust: stable
     addons:
     apt:
@@ -35,17 +34,17 @@ matrix:
     for file in target/debug/hashring-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
     bash <(curl -s https://codecov.io/bash) &&
     echo "Uploaded code coverage"
-  - env: NAME='beta'
+  - env: NAME="beta"
     rust: beta
-  - env: NAME=nightly
+  - env: NAME="nightly"
     rust: nightly
-  - env: NAME='format'
+  - env: NAME="format"
     rust: nightly
     install:
     - rustup component add rustfmt-preview
     script:
     - cargo fmt -- --write-mode=check
-  - env: NAME='lint'
+  - env: NAME="lint"
     rust: nightly
     install:
     - cargo install clippy || echo clippy already installed

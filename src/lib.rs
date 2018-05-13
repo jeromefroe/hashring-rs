@@ -166,7 +166,7 @@ where
     }
 
     /// Add `node` to the hash ring.
-           pub fn add(&mut self, node: T) {
+    pub fn add(&mut self, node: T) {
         let s = node.to_string();
         let key = self.get_key(&s);
         self.ring.push(Node::new(key, node));

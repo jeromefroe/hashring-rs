@@ -86,9 +86,9 @@
 //!         ring.add(node);
 //!     }
 //!
-//!     println!("{:?}", ring.get("foo"));
-//!     println!("{:?}", ring.get("bar"));
-//!     println!("{:?}", ring.get("baz"));
+//!     println!("{:?}", ring.get(&"foo"));
+//!     println!("{:?}", ring.get(&"bar"));
+//!     println!("{:?}", ring.get(&"baz"));
 //! }
 //! ```
 
@@ -97,8 +97,8 @@ extern crate crypto;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
-use crypto::md5::Md5;
 use crypto::digest::Digest;
+use crypto::md5::Md5;
 
 // Node is an internal struct used to encapsulate the nodes that will be added and
 // removed from `HashRing`
@@ -110,10 +110,7 @@ struct Node<T> {
 
 impl<T> Node<T> {
     fn new(key: u64, node: T) -> Node<T> {
-        Node {
-            key: key,
-            node: node,
-        }
+        Node { key, node }
     }
 }
 
@@ -149,17 +146,13 @@ pub struct HashRing<T, U> {
 ///
 /// A hash ring that provides consistent hashing for nodes that are added to it.
 impl<T, U> HashRing<T, U>
-    where T: ToString,
-          U: ToString
+where
+    T: ToString,
+    U: ToString,
 {
     /// Create a new HashRing.
     pub fn new() -> HashRing<T, U> {
-        HashRing {
-            ring: Vec::new(),
-            hash: Md5::new(),
-            buf: [0; 16],
-            phantom: PhantomData,
-        }
+        Default::default()
     }
 
     /// Get the number of nodes in the hash ring.
@@ -167,8 +160,13 @@ impl<T, U> HashRing<T, U>
         self.ring.len()
     }
 
+    /// Returns true if the ring has no elements.
+    pub fn is_empty(&self) -> bool {
+        self.ring.len() == 0
+    }
+
     /// Add `node` to the hash ring.
-    pub fn add(&mut self, node: T) {
+           pub fn add(&mut self, node: T) {
         let s = node.to_string();
         let key = self.get_key(&s);
         self.ring.push(Node::new(key, node));
@@ -177,7 +175,7 @@ impl<T, U> HashRing<T, U>
 
     /// Remove `node` from the hash ring. Returns an `Option` that will contain the `node`
     /// if it was in the hash ring or `None` if it was not present.
-    pub fn remove(&mut self, node: T) -> Option<T> {
+    pub fn remove(&mut self, node: &T) -> Option<T> {
         let s = node.to_string();
         let key = self.get_key(&s);
         match self.ring.binary_search_by(|node| node.key.cmp(&key)) {
@@ -188,8 +186,8 @@ impl<T, U> HashRing<T, U>
 
     /// Get the node responsible for `key`. Returns an `Option` that will contain the `node`
     /// if the hash ring is not empty or `None` if it was empty.
-    pub fn get(&mut self, key: U) -> Option<&T> {
-        if self.ring.len() == 0 {
+    pub fn get(&mut self, key: &U) -> Option<&T> {
+        if self.ring.is_empty() {
             return None;
         }
 
@@ -215,13 +213,23 @@ impl<T, U> HashRing<T, U>
         self.hash.input_str(s);
         self.hash.result(&mut self.buf);
 
-        let n: u64 = (self.buf[7] as u64) << 56 | (self.buf[6] as u64) << 48 |
-                     (self.buf[5] as u64) << 40 |
-                     (self.buf[4] as u64) << 32 | (self.buf[3] as u64) << 24 |
-                     (self.buf[2] as u64) << 16 | (self.buf[1] as u64) << 8 |
-                     self.buf[0] as u64;
+        let n: u64 = u64::from(self.buf[7]) << 56 | u64::from(self.buf[6]) << 48
+            | u64::from(self.buf[5]) << 40 | u64::from(self.buf[4]) << 32
+            | u64::from(self.buf[3]) << 24 | u64::from(self.buf[2]) << 16
+            | u64::from(self.buf[1]) << 8 | u64::from(self.buf[0]) as u64;
 
         n
+    }
+}
+
+impl<T, U> Default for HashRing<T, U> {
+    fn default() -> Self {
+        HashRing {
+            ring: Vec::new(),
+            hash: Md5::new(),
+            buf: [0; 16],
+            phantom: PhantomData,
+        }
     }
 }
 
@@ -241,10 +249,7 @@ mod tests {
     impl VNode {
         fn new(ip: &str, port: u16, id: usize) -> Self {
             let addr = SocketAddr::new(IpAddr::from_str(&ip).unwrap(), port);
-            VNode {
-                id: id,
-                addr: addr,
-            }
+            VNode { id: id, addr: addr }
         }
     }
 
@@ -265,6 +270,7 @@ mod tests {
         let mut ring: HashRing<VNode, &str> = HashRing::new();
 
         assert_eq!(ring.len(), 0);
+        assert!(ring.is_empty());
 
         let vnode1 = VNode::new("127.0.0.1", 1024, 1);
         let vnode2 = VNode::new("127.0.0.1", 1024, 2);
@@ -274,8 +280,9 @@ mod tests {
         ring.add(vnode2);
         ring.add(vnode3);
         assert_eq!(ring.len(), 3);
+        assert!(!ring.is_empty());
 
-        assert_eq!(ring.remove(vnode2).unwrap(), vnode2);
+        assert_eq!(ring.remove(&vnode2).unwrap(), vnode2);
         assert_eq!(ring.len(), 2);
 
         let vnode4 = VNode::new("127.0.0.2", 1024, 2);
@@ -286,9 +293,9 @@ mod tests {
         ring.add(vnode5);
         ring.add(vnode6);
 
-        assert_eq!(ring.remove(vnode1).unwrap(), vnode1);
-        assert_eq!(ring.remove(vnode3).unwrap(), vnode3);
-        assert_eq!(ring.remove(vnode6).unwrap(), vnode6);
+        assert_eq!(ring.remove(&vnode1).unwrap(), vnode1);
+        assert_eq!(ring.remove(&vnode3).unwrap(), vnode3);
+        assert_eq!(ring.remove(&vnode6).unwrap(), vnode6);
         assert_eq!(ring.len(), 2);
     }
 
@@ -296,7 +303,7 @@ mod tests {
     fn get_nodes() {
         let mut ring: HashRing<VNode, &str> = HashRing::new();
 
-        assert_eq!(ring.get("foo"), None);
+        assert_eq!(ring.get(&"foo"), None);
 
         let vnode1 = VNode::new("127.0.0.1", 1024, 1);
         let vnode2 = VNode::new("127.0.0.1", 1024, 2);
@@ -312,16 +319,16 @@ mod tests {
         ring.add(vnode5);
         ring.add(vnode6);
 
-        assert_eq!(ring.get("foo"), Some(&vnode1));
-        assert_eq!(ring.get("bar"), Some(&vnode2));
-        assert_eq!(ring.get("baz"), Some(&vnode1));
+        assert_eq!(ring.get(&"foo"), Some(&vnode1));
+        assert_eq!(ring.get(&"bar"), Some(&vnode2));
+        assert_eq!(ring.get(&"baz"), Some(&vnode1));
 
-        assert_eq!(ring.get("abc"), Some(&vnode6));
-        assert_eq!(ring.get("def"), Some(&vnode3));
-        assert_eq!(ring.get("ghi"), Some(&vnode3));
+        assert_eq!(ring.get(&"abc"), Some(&vnode6));
+        assert_eq!(ring.get(&"def"), Some(&vnode3));
+        assert_eq!(ring.get(&"ghi"), Some(&vnode3));
 
-        assert_eq!(ring.get("cat"), Some(&vnode5));
-        assert_eq!(ring.get("dog"), Some(&vnode6));
-        assert_eq!(ring.get("bird"), Some(&vnode2));
+        assert_eq!(ring.get(&"cat"), Some(&vnode5));
+        assert_eq!(ring.get(&"dog"), Some(&vnode6));
+        assert_eq!(ring.get(&"bird"), Some(&vnode2));
     }
 }

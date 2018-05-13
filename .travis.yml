@@ -1,18 +1,25 @@
 language: rust
 sudo: false
 
+cache: cargo
+env:
+  global:
+  # Prevent dead code elimination to improve code coverage.
+  - RUSTFLAGS="-C link-dead-code"
 rust:
   - stable
   - beta
   - nightly
-
 matrix:
   allow_failures:
     - rust: nightly
-
-env:
-  global:
-  - RUSTFLAGS="-C link-dead-code"
+  fast_finish: true
+  include:
+  - rust: stable
+    install:
+    - rustup component add rustfmt-preview
+    script:
+    - cargo fmt -- --write-mode=check
 
 addons:
   apt:

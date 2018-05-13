@@ -13,7 +13,7 @@ rust:
 matrix:
   fast_finish: true
   include:
-  - env: NAME='lint'
+  - env: NAME='format'
     rust: nightly
     install:
     - rustup component add rustfmt-preview

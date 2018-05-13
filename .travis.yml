@@ -19,7 +19,6 @@ matrix:
     - rustup component add rustfmt-preview
     script:
     - cargo fmt -- --write-mode=check
-  include:
   - env: NAME='lint'
     rust: nightly
     install:

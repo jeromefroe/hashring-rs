@@ -11,11 +11,10 @@ rust:
   - beta
   - nightly
 matrix:
-  allow_failures:
-    - rust: nightly
   fast_finish: true
   include:
-  - rust: nightly
+  - env: NAME='lint'
+    rust: nightly
     install:
     - rustup component add rustfmt-preview
     script:

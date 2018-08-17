@@ -213,10 +213,14 @@ where
         self.hash.input_str(s);
         self.hash.result(&mut self.buf);
 
-        let n: u64 = u64::from(self.buf[7]) << 56 | u64::from(self.buf[6]) << 48
-            | u64::from(self.buf[5]) << 40 | u64::from(self.buf[4]) << 32
-            | u64::from(self.buf[3]) << 24 | u64::from(self.buf[2]) << 16
-            | u64::from(self.buf[1]) << 8 | u64::from(self.buf[0]) as u64;
+        let n: u64 = u64::from(self.buf[7]) << 56
+            | u64::from(self.buf[6]) << 48
+            | u64::from(self.buf[5]) << 40
+            | u64::from(self.buf[4]) << 32
+            | u64::from(self.buf[3]) << 24
+            | u64::from(self.buf[2]) << 16
+            | u64::from(self.buf[1]) << 8
+            | u64::from(self.buf[0]) as u64;
 
         n
     }
@@ -249,7 +253,7 @@ mod tests {
     impl VNode {
         fn new(ip: &str, port: u16, id: usize) -> Self {
             let addr = SocketAddr::new(IpAddr::from_str(&ip).unwrap(), port);
-            VNode { id: id, addr: addr }
+            VNode { id, addr }
         }
     }
 

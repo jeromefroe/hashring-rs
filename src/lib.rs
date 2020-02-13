@@ -83,8 +83,19 @@
 extern crate siphasher;
 
 use siphasher::sip::SipHasher;
+use std::hash::BuildHasher;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
+
+pub struct DefaultHashBuilder;
+
+impl BuildHasher for DefaultHashBuilder {
+    type Hasher = SipHasher;
+
+    fn build_hasher(&self) -> Self::Hasher {
+        SipHasher::new()
+    }
+}
 
 // Node is an internal struct used to encapsulate the nodes that will be added and
 // removed from `HashRing`
@@ -121,17 +132,37 @@ impl<T> Ord for Node<T> {
     }
 }
 
-pub struct HashRing<T> {
+pub struct HashRing<T, S = DefaultHashBuilder> {
+    hash_builder: S,
     ring: Vec<Node<T>>
+}
+
+impl<T> Default for HashRing<T> {
+    fn default() -> Self {
+        HashRing {
+            hash_builder: DefaultHashBuilder,
+            ring: Vec::new(),
+        }
+    }
 }
 
 /// Hash Ring
 ///
 /// A hash ring that provides consistent hashing for nodes that are added to it.
 impl<T> HashRing<T> {
-    /// Create a new HashRing.
+    /// Create a new `HashRing`.
     pub fn new() -> HashRing<T> {
         Default::default()
+    }
+}
+
+impl<T, S> HashRing<T, S> {
+    /// Creates an empty `HashRing` which will use the given hash builder.
+    pub fn with_hasher(hash_builder: S) -> HashRing<T, S> {
+        HashRing {
+            hash_builder,
+            ring: Vec::new(),
+        }
     }
 
     /// Get the number of nodes in the hash ring.
@@ -145,10 +176,10 @@ impl<T> HashRing<T> {
     }
 }
 
-impl<T: Hash> HashRing<T> {
+impl<T: Hash, S: BuildHasher> HashRing<T, S> {
     /// Add `node` to the hash ring.
     pub fn add(&mut self, node: T) {
-        let key = get_key(&node);
+        let key = get_key(&self.hash_builder, &node);
         self.ring.push(Node::new(key, node));
         self.ring.sort();
     }
@@ -156,7 +187,7 @@ impl<T: Hash> HashRing<T> {
     /// Remove `node` from the hash ring. Returns an `Option` that will contain the `node`
     /// if it was in the hash ring or `None` if it was not present.
     pub fn remove(&mut self, node: &T) -> Option<T> {
-        let key = get_key(node);
+        let key = get_key(&self.hash_builder, node);
         match self.ring.binary_search_by(|node| node.key.cmp(&key)) {
             Err(_) => None,
             Ok(n) => Some(self.ring.remove(n).node),
@@ -170,8 +201,7 @@ impl<T: Hash> HashRing<T> {
             return None;
         }
 
-        let k = get_key(key);
-
+        let k = get_key(&self.hash_builder, key);
         let n = match self.ring.binary_search_by(|node| node.key.cmp(&k)) {
             Err(n) => n,
             Ok(n) => n,
@@ -187,8 +217,11 @@ impl<T: Hash> HashRing<T> {
 
 // An internal function for converting a reference to a `str` into a `u64` which
 // can be used as a key in the hash ring.
-fn get_key<T: Hash>(input: T) -> u64 {
-    let mut hasher = SipHasher::new();
+fn get_key<S, T>(hash_builder: &S, input: T) -> u64
+where S: BuildHasher,
+      T: Hash,
+{
+    let mut hasher = hash_builder.build_hasher();
     input.hash(&mut hasher);
     let hash = hasher.finish();
 
@@ -202,12 +235,6 @@ fn get_key<T: Hash>(input: T) -> u64 {
     | u64::from(buf[2]) << 16
     | u64::from(buf[1]) << 8
     | u64::from(buf[0])
-}
-
-impl<T> Default for HashRing<T> {
-    fn default() -> Self {
-        HashRing { ring: Vec::new() }
-    }
 }
 
 #[cfg(test)]

@@ -43,7 +43,7 @@
 //!
 //! use hashring::HashRing;
 //!
-//! #[derive(Debug, Copy, Clone)]
+//! #[derive(Debug, Copy, Clone, Hash, PartialEq)]
 //! struct VNode {
 //!     id: usize,
 //!     addr: SocketAddr,
@@ -59,20 +59,8 @@
 //!     }
 //! }
 //!
-//! impl ToString for VNode {
-//!     fn to_string(&self) -> String {
-//!         format!("{}|{}", self.addr, self.id)
-//!     }
-//! }
-//!
-//! impl PartialEq for VNode {
-//!     fn eq(&self, other: &VNode) -> bool {
-//!         self.id == other.id && self.addr == other.addr
-//!     }
-//! }
-//!
 //! fn main() {
-//!     let mut ring: HashRing<VNode, &str> = HashRing::new();
+//!     let mut ring: HashRing<VNode> = HashRing::new();
 //!
 //!     let mut nodes = vec![];
 //!     nodes.push(VNode::new("127.0.0.1", 1024, 1));
@@ -92,13 +80,11 @@
 //! }
 //! ```
 
-extern crate crypto;
+extern crate siphasher;
 
+use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
-use std::marker::PhantomData;
-
-use crypto::digest::Digest;
-use crypto::md5::Md5;
+use std::hash::{Hash, Hasher};
 
 // Node is an internal struct used to encapsulate the nodes that will be added and
 // removed from `HashRing`
@@ -135,23 +121,16 @@ impl<T> Ord for Node<T> {
     }
 }
 
-pub struct HashRing<T, U> {
-    ring: Vec<Node<T>>,
-    hash: Md5,
-    buf: [u8; 16],
-    phantom: PhantomData<U>,
+pub struct HashRing<T> {
+    ring: Vec<Node<T>>
 }
 
 /// Hash Ring
 ///
 /// A hash ring that provides consistent hashing for nodes that are added to it.
-impl<T, U> HashRing<T, U>
-where
-    T: ToString,
-    U: ToString,
-{
+impl<T> HashRing<T> {
     /// Create a new HashRing.
-    pub fn new() -> HashRing<T, U> {
+    pub fn new() -> HashRing<T> {
         Default::default()
     }
 
@@ -164,11 +143,12 @@ where
     pub fn is_empty(&self) -> bool {
         self.ring.len() == 0
     }
+}
 
+impl<T: Hash> HashRing<T> {
     /// Add `node` to the hash ring.
     pub fn add(&mut self, node: T) {
-        let s = node.to_string();
-        let key = self.get_key(&s);
+        let key = get_key(&node);
         self.ring.push(Node::new(key, node));
         self.ring.sort();
     }
@@ -176,8 +156,7 @@ where
     /// Remove `node` from the hash ring. Returns an `Option` that will contain the `node`
     /// if it was in the hash ring or `None` if it was not present.
     pub fn remove(&mut self, node: &T) -> Option<T> {
-        let s = node.to_string();
-        let key = self.get_key(&s);
+        let key = get_key(node);
         match self.ring.binary_search_by(|node| node.key.cmp(&key)) {
             Err(_) => None,
             Ok(n) => Some(self.ring.remove(n).node),
@@ -186,13 +165,12 @@ where
 
     /// Get the node responsible for `key`. Returns an `Option` that will contain the `node`
     /// if the hash ring is not empty or `None` if it was empty.
-    pub fn get(&mut self, key: &U) -> Option<&T> {
+    pub fn get<U: Hash>(&mut self, key: &U) -> Option<&T> {
         if self.ring.is_empty() {
             return None;
         }
 
-        let s = key.to_string();
-        let k = self.get_key(&s);
+        let k = get_key(key);
 
         let n = match self.ring.binary_search_by(|node| node.key.cmp(&k)) {
             Err(n) => n,
@@ -205,35 +183,30 @@ where
 
         Some(&self.ring[n].node)
     }
-
-    // An internal function for converting a reference to a `str` into a `u64` which
-    // can be used as a key in the hash ring.
-    fn get_key(&mut self, s: &str) -> u64 {
-        self.hash.reset();
-        self.hash.input_str(s);
-        self.hash.result(&mut self.buf);
-
-        let n: u64 = u64::from(self.buf[7]) << 56
-            | u64::from(self.buf[6]) << 48
-            | u64::from(self.buf[5]) << 40
-            | u64::from(self.buf[4]) << 32
-            | u64::from(self.buf[3]) << 24
-            | u64::from(self.buf[2]) << 16
-            | u64::from(self.buf[1]) << 8
-            | u64::from(self.buf[0]) as u64;
-
-        n
-    }
 }
 
-impl<T, U> Default for HashRing<T, U> {
+// An internal function for converting a reference to a `str` into a `u64` which
+// can be used as a key in the hash ring.
+fn get_key<T: Hash>(input: T) -> u64 {
+    let mut hasher = SipHasher::new();
+    input.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    let buf = hash.to_be_bytes();
+
+      u64::from(buf[7]) << 56
+    | u64::from(buf[6]) << 48
+    | u64::from(buf[5]) << 40
+    | u64::from(buf[4]) << 32
+    | u64::from(buf[3]) << 24
+    | u64::from(buf[2]) << 16
+    | u64::from(buf[1]) << 8
+    | u64::from(buf[0])
+}
+
+impl<T> Default for HashRing<T> {
     fn default() -> Self {
-        HashRing {
-            ring: Vec::new(),
-            hash: Md5::new(),
-            buf: [0; 16],
-            phantom: PhantomData,
-        }
+        HashRing { ring: Vec::new() }
     }
 }
 
@@ -244,7 +217,7 @@ mod tests {
 
     use super::HashRing;
 
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, Hash, PartialEq)]
     struct VNode {
         id: usize,
         addr: SocketAddr,
@@ -257,21 +230,9 @@ mod tests {
         }
     }
 
-    impl ToString for VNode {
-        fn to_string(&self) -> String {
-            format!("{}|{}", self.addr, self.id)
-        }
-    }
-
-    impl PartialEq for VNode {
-        fn eq(&self, other: &VNode) -> bool {
-            self.id == other.id && self.addr == other.addr
-        }
-    }
-
     #[test]
     fn add_and_remove_nodes() {
-        let mut ring: HashRing<VNode, &str> = HashRing::new();
+        let mut ring: HashRing<VNode> = HashRing::new();
 
         assert_eq!(ring.len(), 0);
         assert!(ring.is_empty());
@@ -305,7 +266,7 @@ mod tests {
 
     #[test]
     fn get_nodes() {
-        let mut ring: HashRing<VNode, &str> = HashRing::new();
+        let mut ring: HashRing<VNode> = HashRing::new();
 
         assert_eq!(ring.get(&"foo"), None);
 
@@ -324,15 +285,29 @@ mod tests {
         ring.add(vnode6);
 
         assert_eq!(ring.get(&"foo"), Some(&vnode1));
-        assert_eq!(ring.get(&"bar"), Some(&vnode2));
-        assert_eq!(ring.get(&"baz"), Some(&vnode1));
+        assert_eq!(ring.get(&"bar"), Some(&vnode1));
+        assert_eq!(ring.get(&"baz"), Some(&vnode3));
 
         assert_eq!(ring.get(&"abc"), Some(&vnode6));
         assert_eq!(ring.get(&"def"), Some(&vnode3));
-        assert_eq!(ring.get(&"ghi"), Some(&vnode3));
+        assert_eq!(ring.get(&"ghi"), Some(&vnode2));
 
-        assert_eq!(ring.get(&"cat"), Some(&vnode5));
-        assert_eq!(ring.get(&"dog"), Some(&vnode6));
-        assert_eq!(ring.get(&"bird"), Some(&vnode2));
+        assert_eq!(ring.get(&"cat"), Some(&vnode1));
+        assert_eq!(ring.get(&"dog"), Some(&vnode3));
+        assert_eq!(ring.get(&"bird"), Some(&vnode3));
+
+        // at least each node as a key
+        let mut nodes = vec![0; 6];
+        for x in 0..50_000 {
+            let node = ring.get(&x).unwrap();
+            if vnode1 == *node { nodes[0] += 1; }
+            if vnode2 == *node { nodes[1] += 1; }
+            if vnode3 == *node { nodes[2] += 1; }
+            if vnode4 == *node { nodes[3] += 1; }
+            if vnode5 == *node { nodes[4] += 1; }
+            if vnode6 == *node { nodes[5] += 1; }
+        }
+        println!("{:?}", nodes);
+        assert!(nodes.iter().all(|x| *x != 0));
     }
 }

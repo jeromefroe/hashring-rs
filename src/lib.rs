@@ -83,8 +83,8 @@
 extern crate siphasher;
 
 use siphasher::sip::SipHasher;
-use std::hash::BuildHasher;
 use std::cmp::Ordering;
+use std::hash::BuildHasher;
 use std::hash::{Hash, Hasher};
 
 pub struct DefaultHashBuilder;
@@ -134,7 +134,7 @@ impl<T> Ord for Node<T> {
 
 pub struct HashRing<T, S = DefaultHashBuilder> {
     hash_builder: S,
-    ring: Vec<Node<T>>
+    ring: Vec<Node<T>>,
 }
 
 impl<T> Default for HashRing<T> {
@@ -218,8 +218,9 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
 // An internal function for converting a reference to a `str` into a `u64` which
 // can be used as a key in the hash ring.
 fn get_key<S, T>(hash_builder: &S, input: T) -> u64
-where S: BuildHasher,
-      T: Hash,
+where
+    S: BuildHasher,
+    T: Hash,
 {
     let mut hasher = hash_builder.build_hasher();
     input.hash(&mut hasher);
@@ -227,14 +228,14 @@ where S: BuildHasher,
 
     let buf = hash.to_be_bytes();
 
-      u64::from(buf[7]) << 56
-    | u64::from(buf[6]) << 48
-    | u64::from(buf[5]) << 40
-    | u64::from(buf[4]) << 32
-    | u64::from(buf[3]) << 24
-    | u64::from(buf[2]) << 16
-    | u64::from(buf[1]) << 8
-    | u64::from(buf[0])
+    u64::from(buf[7]) << 56
+        | u64::from(buf[6]) << 48
+        | u64::from(buf[5]) << 40
+        | u64::from(buf[4]) << 32
+        | u64::from(buf[3]) << 24
+        | u64::from(buf[2]) << 16
+        | u64::from(buf[1]) << 8
+        | u64::from(buf[0])
 }
 
 #[cfg(test)]
@@ -327,12 +328,24 @@ mod tests {
         let mut nodes = vec![0; 6];
         for x in 0..50_000 {
             let node = ring.get(&x).unwrap();
-            if vnode1 == *node { nodes[0] += 1; }
-            if vnode2 == *node { nodes[1] += 1; }
-            if vnode3 == *node { nodes[2] += 1; }
-            if vnode4 == *node { nodes[3] += 1; }
-            if vnode5 == *node { nodes[4] += 1; }
-            if vnode6 == *node { nodes[5] += 1; }
+            if vnode1 == *node {
+                nodes[0] += 1;
+            }
+            if vnode2 == *node {
+                nodes[1] += 1;
+            }
+            if vnode3 == *node {
+                nodes[2] += 1;
+            }
+            if vnode4 == *node {
+                nodes[3] += 1;
+            }
+            if vnode5 == *node {
+                nodes[4] += 1;
+            }
+            if vnode6 == *node {
+                nodes[5] += 1;
+            }
         }
         println!("{:?}", nodes);
         assert!(nodes.iter().all(|x| *x != 0));

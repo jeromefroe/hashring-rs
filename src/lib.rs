@@ -196,7 +196,7 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
 
     /// Get the node responsible for `key`. Returns an `Option` that will contain the `node`
     /// if the hash ring is not empty or `None` if it was empty.
-    pub fn get<U: Hash>(&mut self, key: &U) -> Option<&T> {
+    pub fn get<U: Hash>(&self, key: &U) -> Option<&T> {
         if self.ring.is_empty() {
             return None;
         }

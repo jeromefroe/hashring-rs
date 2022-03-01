@@ -215,7 +215,7 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
     }
 }
 
-// An internal function for converting a reference to a `str` into a `u64` which
+// An internal function for converting a reference to a hashable type into a `u64` which
 // can be used as a key in the hash ring.
 fn get_key<S, T>(hash_builder: &S, input: T) -> u64
 where

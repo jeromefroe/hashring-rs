@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.1](https://github.com/jeromefroe/hashring-rs/tree/0.2.1) - 2022-02-28
+
+- Use reference instead of mutable reference in `get` method.
+
 ## [v0.2.0](https://github.com/jeromefroe/hashring-rs/tree/0.2.0) - 2020-02-13
 
 - Make hash function configurable and replace MD5 as default with SipHash.

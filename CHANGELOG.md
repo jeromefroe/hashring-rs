@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.0](https://github.com/jeromefroe/hashring-rs/tree/0.3.0) - 2022-03-05
+
+- Get rid of unnecessary transformation of hash value.
+
 ## [v0.2.1](https://github.com/jeromefroe/hashring-rs/tree/0.2.1) - 2022-02-28
 
 - Use reference instead of mutable reference in `get` method.

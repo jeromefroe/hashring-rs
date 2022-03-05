@@ -224,18 +224,7 @@ where
 {
     let mut hasher = hash_builder.build_hasher();
     input.hash(&mut hasher);
-    let hash = hasher.finish();
-
-    let buf = hash.to_be_bytes();
-
-    u64::from(buf[7]) << 56
-        | u64::from(buf[6]) << 48
-        | u64::from(buf[5]) << 40
-        | u64::from(buf[4]) << 32
-        | u64::from(buf[3]) << 24
-        | u64::from(buf[2]) << 16
-        | u64::from(buf[1]) << 8
-        | u64::from(buf[0])
+    hasher.finish()
 }
 
 #[cfg(test)]
@@ -312,16 +301,16 @@ mod tests {
         ring.add(vnode5);
         ring.add(vnode6);
 
-        assert_eq!(ring.get(&"foo"), Some(&vnode1));
-        assert_eq!(ring.get(&"bar"), Some(&vnode1));
-        assert_eq!(ring.get(&"baz"), Some(&vnode3));
+        assert_eq!(ring.get(&"foo"), Some(&vnode3));
+        assert_eq!(ring.get(&"bar"), Some(&vnode2));
+        assert_eq!(ring.get(&"baz"), Some(&vnode6));
 
         assert_eq!(ring.get(&"abc"), Some(&vnode6));
-        assert_eq!(ring.get(&"def"), Some(&vnode3));
-        assert_eq!(ring.get(&"ghi"), Some(&vnode2));
+        assert_eq!(ring.get(&"def"), Some(&vnode6));
+        assert_eq!(ring.get(&"ghi"), Some(&vnode3));
 
         assert_eq!(ring.get(&"cat"), Some(&vnode1));
-        assert_eq!(ring.get(&"dog"), Some(&vnode3));
+        assert_eq!(ring.get(&"dog"), Some(&vnode6));
         assert_eq!(ring.get(&"bird"), Some(&vnode3));
 
         // at least each node as a key

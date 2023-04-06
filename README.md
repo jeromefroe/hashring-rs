@@ -24,14 +24,12 @@ can build other abstractions, such as virtual nodes, on top of it. The example
 below shows one potential implementation of virtual nodes on top of `HashRing`
 
 ```rust
-extern crate hashring;
-
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 
 use hashring::HashRing;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq)]
 struct VNode {
     id: usize,
     addr: SocketAddr,
@@ -53,14 +51,8 @@ impl ToString for VNode {
     }
 }
 
-impl PartialEq for VNode {
-    fn eq(&self, other: &VNode) -> bool {
-        self.id == other.id && self.addr == other.addr
-    }
-}
-
 fn main() {
-    let mut ring: HashRing<VNode, &str> = HashRing::new();
+    let mut ring: HashRing<VNode> = HashRing::new();
 
     let mut nodes = vec![];
     nodes.push(VNode::new("127.0.0.1", 1024, 1));
@@ -74,8 +66,8 @@ fn main() {
         ring.add(node);
     }
 
-    println!("{:?}", ring.get("foo"));
-    println!("{:?}", ring.get("bar"));
-    println!("{:?}", ring.get("baz"));
+    println!("{:?}", ring.get(&"foo"));
+    println!("{:?}", ring.get(&"bar"));
+    println!("{:?}", ring.get(&"baz"));
 }
 ```

@@ -215,6 +215,30 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
     }
 }
 
+pub struct HashRingIterator<T> {
+    ring: std::vec::IntoIter<Node<T>>,
+}
+
+impl<T> Iterator for HashRingIterator<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.ring.next().map(|node| node.node)
+    }
+}
+
+impl<T: Clone> IntoIterator for HashRing<T> {
+    type Item = T;
+
+    type IntoIter = HashRingIterator<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        HashRingIterator {
+            ring: self.ring.into_iter(),
+        }
+    }
+}
+
 // An internal function for converting a reference to a hashable type into a `u64` which
 // can be used as a key in the hash ring.
 fn get_key<S, T>(hash_builder: &S, input: T) -> u64
@@ -338,5 +362,27 @@ mod tests {
         }
         println!("{:?}", nodes);
         assert!(nodes.iter().all(|x| *x != 0));
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut ring: HashRing<VNode> = HashRing::new();
+
+        assert_eq!(ring.get(&"foo"), None);
+
+        let vnode1 = VNode::new("127.0.0.1", 1024, 1);
+        let vnode2 = VNode::new("127.0.0.1", 1024, 2);
+        let vnode3 = VNode::new("127.0.0.2", 1024, 1);
+
+        ring.add(vnode1);
+        ring.add(vnode2);
+        ring.add(vnode3);
+
+        let mut iter = ring.into_iter();
+
+        assert_eq!(Some(vnode1), iter.next());
+        assert_eq!(Some(vnode3), iter.next());
+        assert_eq!(Some(vnode2), iter.next());
+        assert_eq!(None, iter.next());
     }
 }

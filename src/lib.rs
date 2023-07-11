@@ -242,7 +242,7 @@ mod tests {
 
     impl VNode {
         fn new(ip: &str, port: u16, id: usize) -> Self {
-            let addr = SocketAddr::new(IpAddr::from_str(&ip).unwrap(), port);
+            let addr = SocketAddr::new(IpAddr::from_str(ip).unwrap(), port);
             VNode { id, addr }
         }
     }

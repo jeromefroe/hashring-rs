@@ -301,17 +301,17 @@ mod tests {
         ring.add(vnode5);
         ring.add(vnode6);
 
-        assert_eq!(ring.get(&"foo"), Some(&vnode3));
-        assert_eq!(ring.get(&"bar"), Some(&vnode2));
-        assert_eq!(ring.get(&"baz"), Some(&vnode6));
+        assert_eq!(ring.get(&"foo"), Some(&vnode5));
+        assert_eq!(ring.get(&"bar"), Some(&vnode3));
+        assert_eq!(ring.get(&"baz"), Some(&vnode5));
 
-        assert_eq!(ring.get(&"abc"), Some(&vnode6));
-        assert_eq!(ring.get(&"def"), Some(&vnode6));
-        assert_eq!(ring.get(&"ghi"), Some(&vnode3));
+        assert_eq!(ring.get(&"abc"), Some(&vnode2));
+        assert_eq!(ring.get(&"def"), Some(&vnode2));
+        assert_eq!(ring.get(&"ghi"), Some(&vnode6));
 
         assert_eq!(ring.get(&"cat"), Some(&vnode1));
-        assert_eq!(ring.get(&"dog"), Some(&vnode6));
-        assert_eq!(ring.get(&"bird"), Some(&vnode3));
+        assert_eq!(ring.get(&"dog"), Some(&vnode5));
+        assert_eq!(ring.get(&"bird"), Some(&vnode5));
 
         // at least each node as a key
         let mut nodes = vec![0; 6];

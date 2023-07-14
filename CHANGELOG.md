@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.1](https://github.com/jeromefroe/hashring-rs/tree/0.3.1) - 2023-07-14
+
+- Add support for iterators.
+
 ## [v0.3.0](https://github.com/jeromefroe/hashring-rs/tree/0.3.0) - 2022-03-05
 
 - Get rid of unnecessary transformation of hash value.

@@ -84,6 +84,7 @@ extern crate siphasher;
 
 use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
+use std::fmt::Debug;
 use std::hash::BuildHasher;
 use std::hash::{Hash, Hasher};
 
@@ -99,7 +100,7 @@ impl BuildHasher for DefaultHashBuilder {
 
 // Node is an internal struct used to encapsulate the nodes that will be added and
 // removed from `HashRing`
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Node<T> {
     key: u64,
     node: T,
@@ -212,6 +213,42 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
         }
 
         Some(&self.ring[n].node)
+    }
+
+    /// Get the node responsible for `key` along with the next `replica` nodes after.
+    /// Returns None when the ring is empty. If `replicas` is larger than the length
+    /// of the ring, this function will shrink to just contain the entire ring.
+    pub fn get_with_replicas<U: Hash>(&self, key: &U, replicas: usize) -> Option<Vec<T>>
+    where
+        T: Clone + Debug,
+    {
+        if self.ring.is_empty() {
+            return None;
+        }
+
+        let replicas = if replicas > self.ring.len() {
+            self.ring.len()
+        } else {
+            replicas + 1
+        };
+
+        let k = get_key(&self.hash_builder, key);
+        let n = match self.ring.binary_search_by(|node| node.key.cmp(&k)) {
+            Err(n) => n,
+            Ok(n) => n,
+        };
+
+        let mut nodes = self.ring.clone();
+        nodes.rotate_left(n);
+
+        let replica_nodes = nodes
+            .iter()
+            .cycle()
+            .take(replicas)
+            .map(|node| node.node.clone())
+            .collect();
+
+        Some(replica_nodes)
     }
 }
 
@@ -362,6 +399,66 @@ mod tests {
         }
         println!("{:?}", nodes);
         assert!(nodes.iter().all(|x| *x != 0));
+    }
+
+    #[test]
+    fn get_nodes_with_replicas() {
+        let mut ring: HashRing<VNode> = HashRing::new();
+
+        assert_eq!(ring.get(&"foo"), None);
+        assert_eq!(ring.get_with_replicas(&"foo", 1), None);
+
+        let vnode1 = VNode::new("127.0.0.1", 1024, 1);
+        let vnode2 = VNode::new("127.0.0.1", 1024, 2);
+        let vnode3 = VNode::new("127.0.0.2", 1024, 3);
+        let vnode4 = VNode::new("127.0.0.2", 1024, 4);
+        let vnode5 = VNode::new("127.0.0.2", 1024, 5);
+        let vnode6 = VNode::new("127.0.0.3", 1024, 6);
+
+        ring.add(vnode1);
+        ring.add(vnode2);
+        ring.add(vnode3);
+        ring.add(vnode4);
+        ring.add(vnode5);
+        ring.add(vnode6);
+
+        assert_eq!(
+            ring.get_with_replicas(&"bar", 2).unwrap(),
+            vec![vnode6, vnode5, vnode2]
+        );
+
+        assert_eq!(
+            ring.get_with_replicas(&"foo", 4).unwrap(),
+            vec![vnode3, vnode1, vnode6, vnode5, vnode2]
+        );
+    }
+
+    #[test]
+    fn get_with_replicas_returns_too_many_replicas() {
+        let mut ring: HashRing<VNode> = HashRing::new();
+
+        assert_eq!(ring.get(&"foo"), None);
+        assert_eq!(ring.get_with_replicas(&"foo", 1), None);
+
+        let vnode1 = VNode::new("127.0.0.1", 1024, 1);
+        let vnode2 = VNode::new("127.0.0.1", 1024, 2);
+        let vnode3 = VNode::new("127.0.0.2", 1024, 3);
+        let vnode4 = VNode::new("127.0.0.2", 1024, 4);
+        let vnode5 = VNode::new("127.0.0.2", 1024, 5);
+        let vnode6 = VNode::new("127.0.0.3", 1024, 6);
+
+        ring.add(vnode1);
+        ring.add(vnode2);
+        ring.add(vnode3);
+        ring.add(vnode4);
+        ring.add(vnode5);
+        ring.add(vnode6);
+
+        assert_eq!(
+            ring.get_with_replicas(&"bar", 20).unwrap(),
+            vec![vnode6, vnode5, vnode2, vnode4, vnode3, vnode1],
+            "too high of replicas causes the count to shrink to ring length"
+        );
     }
 
     #[test]

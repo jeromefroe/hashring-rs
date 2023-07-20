@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.2](https://github.com/jeromefroe/hashring-rs/tree/0.3.2) - 2023-07-19
+
+- Add `get_with_replicas` method.
+
 ## [v0.3.1](https://github.com/jeromefroe/hashring-rs/tree/0.3.1) - 2023-07-14
 
 - Add support for iterators.

@@ -185,6 +185,14 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
         self.ring.sort();
     }
 
+    pub fn batch_add(&mut self, nodes:Vec<T> ) {
+       for node in nodes {
+           let key = get_key(&self.hash_builder, &node);
+           self.ring.push(Node::new(key, node));
+       }
+        self.ring.sort()
+    }
+
     /// Remove `node` from the hash ring. Returns an `Option` that will contain the `node`
     /// if it was in the hash ring or `None` if it was not present.
     pub fn remove(&mut self, node: &T) -> Option<T> {

@@ -290,21 +290,27 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::net::{IpAddr, SocketAddr};
+    use std::net::{Ipv4Addr, SocketAddrV4};
     use std::str::FromStr;
 
     use super::HashRing;
 
-    #[derive(Debug, Copy, Clone, Hash, PartialEq)]
+    #[derive(Debug, Copy, Clone, PartialEq)]
     struct VNode {
         id: usize,
-        addr: SocketAddr,
+        addr: SocketAddrV4,
     }
 
     impl VNode {
         fn new(ip: &str, port: u16, id: usize) -> Self {
-            let addr = SocketAddr::new(IpAddr::from_str(ip).unwrap(), port);
+            let addr = SocketAddrV4::new(Ipv4Addr::from_str(ip).unwrap(), port);
             VNode { id, addr }
+        }
+    }
+
+    impl std::hash::Hash for VNode {
+        fn hash<H: std::hash::Hasher>(&self, s: &mut H) {
+            (self.id, self.addr.port(), self.addr.ip()).hash(s)
         }
     }
 
@@ -362,17 +368,17 @@ mod tests {
         ring.add(vnode5);
         ring.add(vnode6);
 
-        assert_eq!(ring.get(&"foo"), Some(&vnode5));
-        assert_eq!(ring.get(&"bar"), Some(&vnode3));
-        assert_eq!(ring.get(&"baz"), Some(&vnode5));
+        assert_eq!(ring.get(&"foo"), Some(&vnode6));
+        assert_eq!(ring.get(&"bar"), Some(&vnode5));
+        assert_eq!(ring.get(&"baz"), Some(&vnode4));
 
-        assert_eq!(ring.get(&"abc"), Some(&vnode2));
-        assert_eq!(ring.get(&"def"), Some(&vnode2));
+        assert_eq!(ring.get(&"abc"), Some(&vnode1));
+        assert_eq!(ring.get(&"def"), Some(&vnode1));
         assert_eq!(ring.get(&"ghi"), Some(&vnode6));
 
-        assert_eq!(ring.get(&"cat"), Some(&vnode1));
-        assert_eq!(ring.get(&"dog"), Some(&vnode5));
-        assert_eq!(ring.get(&"bird"), Some(&vnode5));
+        assert_eq!(ring.get(&"cat"), Some(&vnode5));
+        assert_eq!(ring.get(&"dog"), Some(&vnode4));
+        assert_eq!(ring.get(&"bird"), Some(&vnode4));
 
         // at least each node as a key
         let mut nodes = vec![0; 6];
@@ -424,12 +430,12 @@ mod tests {
 
         assert_eq!(
             ring.get_with_replicas(&"bar", 2).unwrap(),
-            vec![vnode6, vnode5, vnode2]
+            vec![vnode3, vnode1, vnode2]
         );
 
         assert_eq!(
             ring.get_with_replicas(&"foo", 4).unwrap(),
-            vec![vnode3, vnode1, vnode6, vnode5, vnode2]
+            vec![vnode5, vnode4, vnode3, vnode1, vnode2]
         );
     }
 
@@ -456,7 +462,7 @@ mod tests {
 
         assert_eq!(
             ring.get_with_replicas(&"bar", 20).unwrap(),
-            vec![vnode6, vnode5, vnode2, vnode4, vnode3, vnode1],
+            vec![vnode3, vnode1, vnode2, vnode6, vnode5, vnode4],
             "too high of replicas causes the count to shrink to ring length"
         );
     }
@@ -477,8 +483,8 @@ mod tests {
 
         let mut iter = ring.into_iter();
 
-        assert_eq!(Some(vnode1), iter.next());
         assert_eq!(Some(vnode3), iter.next());
+        assert_eq!(Some(vnode1), iter.next());
         assert_eq!(Some(vnode2), iter.next());
         assert_eq!(None, iter.next());
     }

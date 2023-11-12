@@ -84,6 +84,7 @@ extern crate siphasher;
 
 use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
+use std::collections::hash_map::RandomState;
 use std::fmt::Debug;
 use std::hash::BuildHasher;
 use std::hash::{Hash, Hasher};
@@ -283,9 +284,7 @@ where
     S: BuildHasher,
     T: Hash,
 {
-    let mut hasher = hash_builder.build_hasher();
-    input.hash(&mut hasher);
-    hasher.finish()
+    hash_builder.hash_one(input)
 }
 
 #[cfg(test)]

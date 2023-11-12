@@ -84,10 +84,9 @@ extern crate siphasher;
 
 use siphasher::sip::SipHasher;
 use std::cmp::Ordering;
-use std::collections::hash_map::RandomState;
 use std::fmt::Debug;
 use std::hash::BuildHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 pub struct DefaultHashBuilder;
 
@@ -289,6 +288,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::hash::Hash;
+    use std::hash::Hasher;
     use std::net::{Ipv4Addr, SocketAddrV4};
     use std::str::FromStr;
 
@@ -307,8 +308,8 @@ mod tests {
         }
     }
 
-    impl std::hash::Hash for VNode {
-        fn hash<H: std::hash::Hasher>(&self, s: &mut H) {
+    impl Hash for VNode {
+        fn hash<H: Hasher>(&self, s: &mut H) {
             (self.id, self.addr.port(), self.addr.ip()).hash(s)
         }
     }

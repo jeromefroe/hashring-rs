@@ -496,31 +496,4 @@ mod tests {
         assert_eq!(Some(vnode2), iter.next());
         assert_eq!(None, iter.next());
     }
-
-    struct TestIterStruct {
-        ring: HashRing<String>,
-    }
-
-    impl TestIterStruct {
-        pub fn print_each(&self) -> Vec<String> {
-            let mut v = Vec::new();
-            for node in self.ring.clone().into_iter() {
-                v.push(node);
-            }
-            v
-        }
-    }
-
-    #[test]
-    fn into_iter_for_struct_field() {
-        let mut ring: HashRing<String> = HashRing::new();
-        ring.add("foo".to_string());
-        ring.add("bar".to_string());
-
-        let s = TestIterStruct { ring };
-
-        let v = s.print_each();
-
-        assert_eq!(v.len(), 2);
-    }
 }

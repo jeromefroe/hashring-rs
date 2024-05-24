@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.5](https://github.com/jeromefroe/hashring-rs/tree/0.3.5) - 2024-05-24
+
+- Derive `PartialEq` and `Debug` traits on `HashRing`.
+
 ## [v0.3.4](https://github.com/jeromefroe/hashring-rs/tree/0.3.4) - 2024-05-18
 
 - Derive `Clone` trait on `HashRing`.

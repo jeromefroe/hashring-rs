@@ -88,7 +88,7 @@ use std::fmt::Debug;
 use std::hash::BuildHasher;
 use std::hash::Hash;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct DefaultHashBuilder;
 
 impl BuildHasher for DefaultHashBuilder {
@@ -134,7 +134,7 @@ impl<T> Ord for Node<T> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct HashRing<T, S = DefaultHashBuilder> {
     hash_builder: S,
     ring: Vec<Node<T>>,

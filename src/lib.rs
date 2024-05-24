@@ -88,7 +88,7 @@ use std::fmt::Debug;
 use std::hash::BuildHasher;
 use std::hash::Hash;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct DefaultHashBuilder;
 
 impl BuildHasher for DefaultHashBuilder {
@@ -134,7 +134,7 @@ impl<T> Ord for Node<T> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct HashRing<T, S = DefaultHashBuilder> {
     hash_builder: S,
     ring: Vec<Node<T>>,
@@ -495,5 +495,38 @@ mod tests {
         assert_eq!(Some(vnode1), iter.next());
         assert_eq!(Some(vnode2), iter.next());
         assert_eq!(None, iter.next());
+    }
+
+    #[test]
+    fn hash_ring_eq() {
+        let mut ring: HashRing<VNode> = HashRing::new();
+        let mut other = ring.clone();
+        assert_eq!(ring, other);
+        assert_eq!(ring.len(), 0);
+
+        let vnode1 = VNode::new("127.0.0.1", 1024, 1);
+        let vnode2 = VNode::new("127.0.0.1", 1024, 2);
+        let vnode3 = VNode::new("127.0.0.2", 1024, 1);
+        other.add(vnode1);
+        other.add(vnode2);
+        other.add(vnode3);
+        assert_ne!(ring, other);
+        assert_eq!(other.len(), 3);
+
+        other.remove(&vnode1).unwrap();
+        other.remove(&vnode2).unwrap();
+        other.remove(&vnode3).unwrap();
+        assert_eq!(ring, other);
+        assert_eq!(other.len(), 0);
+
+        ring.add(vnode1);
+        ring.add(vnode2);
+        other.add(vnode2);
+        other.add(vnode3);
+        other.remove(&vnode3);
+        ring.remove(&vnode1);
+        assert_eq!(ring, other);
+        assert_eq!(ring.len(), 1);
+        assert_eq!(other.len(), 1);
     }
 }

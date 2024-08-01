@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.6](https://github.com/jeromefroe/hashring-rs/tree/0.3.6) - 2024-07-31
+
+- Remove `Clone` trait bound from `IntoIterator` implementation.
+
 ## [v0.3.5](https://github.com/jeromefroe/hashring-rs/tree/0.3.5) - 2024-05-24
 
 - Derive `PartialEq` and `Debug` traits on `HashRing`.

@@ -1,6 +1,6 @@
 [package]
 name = "hashring"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["Jerome Froelich <jeromefroelich@hotmail.com>"]
 description = "A minimal implementation of consistent hashing"
 homepage = "https://github.com/jeromefroe/hashring-rs"

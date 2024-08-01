@@ -274,7 +274,7 @@ impl<T> Iterator for HashRingIterator<T> {
     }
 }
 
-impl<T: Clone> IntoIterator for HashRing<T> {
+impl<T> IntoIterator for HashRing<T> {
     type Item = T;
 
     type IntoIter = HashRingIterator<T>;

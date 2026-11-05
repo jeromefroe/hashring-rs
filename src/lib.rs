@@ -320,7 +320,7 @@ mod tests {
 
     impl Hash for VNode {
         fn hash<H: Hasher>(&self, s: &mut H) {
-            (self.id, self.addr.port(), self.addr.ip()).hash(s)
+            (self.id, self.addr.port(), self.addr.ip().octets()).hash(s)
         }
     }
 

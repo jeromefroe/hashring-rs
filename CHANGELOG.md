@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.7](https://github.com/jeromefroe/hashring-rs/tree/0.3.7) - 2026-11-05
+
+- Avoid cloning the ring in `get_with_replicas`.
+
 ## [v0.3.6](https://github.com/jeromefroe/hashring-rs/tree/0.3.6) - 2024-07-31
 
 - Remove `Clone` trait bound from `IntoIterator` implementation.

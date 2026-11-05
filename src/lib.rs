@@ -248,11 +248,11 @@ impl<T: Hash, S: BuildHasher> HashRing<T, S> {
             Ok(n) => n,
         };
 
-        let mut nodes = self.ring.clone();
-        nodes.rotate_left(n);
-
-        let replica_nodes = nodes
+        // Walk the ring in place from `n`, wrapping around, instead of cloning
+        // and rotating every node of the ring for each lookup.
+        let replica_nodes = self.ring[n..]
             .iter()
+            .chain(self.ring[..n].iter())
             .cycle()
             .take(replicas)
             .map(|node| node.node.clone())
@@ -303,7 +303,7 @@ mod tests {
     use std::net::{Ipv4Addr, SocketAddrV4};
     use std::str::FromStr;
 
-    use super::HashRing;
+    use super::{get_key, HashRing};
 
     #[derive(Debug, Copy, Clone, PartialEq)]
     struct VNode {
@@ -473,6 +473,48 @@ mod tests {
             vec![vnode3, vnode1, vnode2, vnode6, vnode5, vnode4],
             "too high of replicas causes the count to shrink to ring length"
         );
+    }
+
+    #[test]
+    fn get_with_replicas_matches_clone_and_rotate() {
+        fn clone_and_rotate(ring: &HashRing<String>, key: &str, replicas: usize) -> Vec<String> {
+            let replicas = if replicas > ring.ring.len() {
+                ring.ring.len()
+            } else {
+                replicas + 1
+            };
+            let k = get_key(&ring.hash_builder, key);
+            let n = match ring.ring.binary_search_by(|node| node.key.cmp(&k)) {
+                Err(n) => n,
+                Ok(n) => n,
+            };
+            let mut nodes = ring.ring.clone();
+            nodes.rotate_left(n);
+            nodes
+                .iter()
+                .cycle()
+                .take(replicas)
+                .map(|node| node.node.clone())
+                .collect()
+        }
+
+        let mut ring: HashRing<String> = HashRing::new();
+        for host in 0..5 {
+            for vnode in 0..64 {
+                ring.add(format!("host-{host}|{vnode}"));
+            }
+        }
+
+        for i in 0..1000 {
+            let key = format!("key-{i}");
+            for replicas in [0, 1, 2, 8, ring.len() - 1, ring.len(), ring.len() + 1] {
+                assert_eq!(
+                    ring.get_with_replicas(&key, replicas).unwrap(),
+                    clone_and_rotate(&ring, &key, replicas),
+                    "key: {key}, replicas: {replicas}"
+                );
+            }
+        }
     }
 
     #[test]
